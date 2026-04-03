@@ -2,7 +2,7 @@
 
 This project comes with container image deployed into GitHub registry. Image contains both Kafka distribution and this CLI project itself. You can use that image to deploy it into Kubernetes container running your Kafka cluster. 
 
-After exec-ing into this pod you can run both Kafka tooling from Kafka distribution or invoke this CLI tool named `jawdaw`.
+After exec-ing into this pod you can run both Kafka tooling from Kafka distribution or invoke this CLI tool named `jackdaw`.
 
 ## Release process
 

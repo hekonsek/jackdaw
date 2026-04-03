@@ -65,4 +65,3 @@ When triggered, it:
 Published image tags:
 
 - `ghcr.io/<owner>/<repo>:<version>`
-- `ghcr.io/<owner>/<repo>:latest`

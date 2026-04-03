@@ -88,4 +88,3 @@ jobs:
             SCALA_VERSION=${{ github.event.inputs.scala_version }}
           tags: |
             ${{ steps.image.outputs.repository }}:${{ steps.bump_version.outputs.version }}
-            ${{ steps.image.outputs.repository }}:latest

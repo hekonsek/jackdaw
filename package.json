@@ -1,6 +1,6 @@
 {
   "name": "jackdaw",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Toolkit for inspecting Kafka clusters",
   "license": "Apache-2.0",
   "bin": {

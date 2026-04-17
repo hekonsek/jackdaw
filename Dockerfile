@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
@@ -30,6 +28,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     tini \
   && rm -rf /var/lib/apt/lists/*
 
+RUN curl --fail --show-error --location "${KAFKA_DOWNLOAD_URL}" --output /tmp/kafka.tgz \
+  && tar -xzf /tmp/kafka.tgz -C /opt \
+  && mv /opt/kafka_${SCALA_VERSION}-${KAFKA_VERSION} ${KAFKA_HOME} \
+  && rm /tmp/kafka.tgz
+
 WORKDIR ${JACKDAW_HOME}
 
 COPY --from=builder /app/package.json ./package.json
@@ -37,20 +40,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-RUN --mount=type=cache,target=/var/cache/jackdaw/kafka,sharing=locked \
-  set -eux; \
-  kafka_archive="kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"; \
-  cached_archive="/var/cache/jackdaw/kafka/${kafka_archive}"; \
-  if [ -s "${cached_archive}" ] && ! tar -tzf "${cached_archive}" >/dev/null; then \
-    rm -f "${cached_archive}"; \
-  fi; \
-  if [ ! -s "${cached_archive}" ]; then \
-    curl --fail --show-error --location "${KAFKA_DOWNLOAD_URL}" --output "${cached_archive}.tmp"; \
-    mv "${cached_archive}.tmp" "${cached_archive}"; \
-  fi; \
-  tar -xzf "${cached_archive}" -C /opt \
-  && mv /opt/kafka_${SCALA_VERSION}-${KAFKA_VERSION} ${KAFKA_HOME} \
-  && chmod +x /usr/local/bin/docker-entrypoint.sh \
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
   && printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' 'exec node /opt/jackdaw/dist/adapters/in/cli/cli.js "$@"' > /usr/local/bin/jackdaw \
   && chmod +x /usr/local/bin/jackdaw \
   && ln -s /usr/local/bin/jackdaw /usr/local/bin/jawdaw

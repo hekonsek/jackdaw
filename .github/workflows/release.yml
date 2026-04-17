@@ -86,5 +86,7 @@ jobs:
           build-args: |
             KAFKA_VERSION=${{ github.event.inputs.kafka_version }}
             SCALA_VERSION=${{ github.event.inputs.scala_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ steps.image.outputs.repository }}:${{ steps.bump_version.outputs.version }}

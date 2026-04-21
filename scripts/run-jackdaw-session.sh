@@ -18,24 +18,6 @@ pod_name="$("${kubectl_bin}" create "${context_args[@]}" --dry-run=client -f "${
 image="$("${kubectl_bin}" create "${context_args[@]}" --dry-run=client -f "${manifest}" -o jsonpath='{.spec.containers[0].image}')"
 overrides="$("${kubectl_bin}" create "${context_args[@]}" --dry-run=client -f "${manifest}" -o json)"
 
-dry_run=false
-for arg in "$@"; do
-  case "${arg}" in
-    --dry-run | --dry-run=*)
-      dry_run=true
-      ;;
-  esac
-done
-
-if [ "${dry_run}" = true ]; then
-  exec "${kubectl_bin}" run "${pod_name}" \
-    "${context_args[@]}" \
-    --image="${image}" \
-    --restart=Never \
-    --overrides="${overrides}" \
-    "$@"
-fi
-
 exec "${kubectl_bin}" run "${pod_name}" \
   "${context_args[@]}" \
   --image="${image}" \

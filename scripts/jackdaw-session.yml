@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jackdaw-session
+  labels:
+    app.kubernetes.io/name: jackdaw
+    app.kubernetes.io/component: session
+spec:
+  restartPolicy: Never
+  containers:
+    - name: jackdaw
+      image: ghcr.io/hekonsek/jackdaw:0.7.0
+      imagePullPolicy: IfNotPresent
+      command:
+        - bash
+        - -i
+      stdin: true
+      tty: true
+      resources:
+        requests:
+          memory: 1Gi
+        limits:
+          memory: 1Gi

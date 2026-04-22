@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import packageJson from "../../../../package.json";
 import { ClusterDiscoveryService } from "../../../services/cluster-discovery/cluster-discovery.service";
+import { KubectlSessionService } from "../../../services/kubectl-session/kubectl-session.service";
 import {
   TopicListInputError,
   TopicListService,
@@ -10,6 +11,7 @@ import {
 import { VersionService } from "../../../services/version/version.service";
 
 const clusterDiscoveryService = new ClusterDiscoveryService();
+const kubectlSessionService = new KubectlSessionService(packageJson.version);
 const topicListService = new TopicListService(clusterDiscoveryService);
 const versionService = new VersionService(packageJson.version);
 
@@ -56,12 +58,24 @@ topicCommand
   .option("--bootstrap-url <url>", "Kafka bootstrap connection URL")
   .option("--scram-username <username>", "SCRAM username")
   .option("--scram-password <password>", "SCRAM password")
+  .option("--kubectl", "Execute command in kubectl mode")
   .action(async (options: {
     bootstrapUrl?: string;
     scramUsername?: string;
     scramPassword?: string;
+    kubectl?: boolean;
   }) => {
     try {
+      if (options.kubectl === true) {
+        const exitCode = await kubectlSessionService.run({
+          environment: process.env,
+          command: buildTopicListKubectlCommand(options),
+        });
+
+        process.exitCode = exitCode ?? 1;
+        return;
+      }
+
       const result = await topicListService.list({
         environment: process.env,
         bootstrapUrl: options.bootstrapUrl,
@@ -96,3 +110,29 @@ topicCommand
   });
 
 program.parse();
+
+function buildTopicListKubectlCommand(options: {
+  bootstrapUrl?: string;
+  scramUsername?: string;
+  scramPassword?: string;
+}): [string, ...string[]] {
+  const command: [string, ...string[]] = ["jackdaw", "topic", "list"];
+
+  if (hasValue(options.bootstrapUrl)) {
+    command.push("--bootstrap-url", options.bootstrapUrl.trim());
+  }
+
+  if (hasValue(options.scramUsername)) {
+    command.push("--scram-username", options.scramUsername);
+  }
+
+  if (hasValue(options.scramPassword)) {
+    command.push("--scram-password", options.scramPassword);
+  }
+
+  return command;
+}
+
+function hasValue(value: string | undefined): value is string {
+  return value !== undefined && value.trim().length > 0;
+}

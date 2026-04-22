@@ -11,3 +11,7 @@ Under the hood `kafka-topics.sh` script is executed.
 If bootstrap URL is not provided via `--bootstrap-url`, this command uses `cluster discovery` logic to attempt to find it.
 
 If `--scram-username` and `--scram-password` are provided then command genarates command config file and injects these values into it. Then `kafka-topics.sh` uses that file for authentication.
+
+## Other options
+
+`--kubectl` : Executes command in [kubectl mode](../0002-kubectl-mode.md).

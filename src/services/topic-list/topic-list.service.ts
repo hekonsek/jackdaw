@@ -23,6 +23,12 @@ interface CommandConfig {
   directory: string;
 }
 
+interface TopicDescription {
+  name: string;
+  partitionCount: string;
+  replicationFactor: string;
+}
+
 export type TopicListResult =
   | {
       listed: false;
@@ -62,7 +68,7 @@ export class TopicListService {
     const commandConfig = await this.createCommandConfig(input);
 
     try {
-      const args = ["--bootstrap-server", bootstrapUrl, "--list"];
+      const args = ["--bootstrap-server", bootstrapUrl, "--describe"];
 
       if (commandConfig) {
         args.push("--command-config", commandConfig.path);
@@ -76,7 +82,9 @@ export class TopicListService {
       return {
         listed: true,
         bootstrapUrl,
-        stdout,
+        stdout: this.formatTopicDescriptions(
+          this.parseTopicDescriptions(stdout),
+        ),
         stderr,
       };
     } finally {
@@ -145,6 +153,77 @@ export class TopicListService {
 
   private escapeJaasValue(value: string): string {
     return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  }
+
+  private parseTopicDescriptions(stdout: string): TopicDescription[] {
+    return stdout
+      .split(/\r?\n/)
+      .map((line) => this.parseTopicDescription(line))
+      .filter((topic): topic is TopicDescription => topic !== undefined)
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  private parseTopicDescription(line: string): TopicDescription | undefined {
+    const name = this.extractKafkaDescriptionValue(line, "Topic");
+    const partitionCount = this.extractKafkaDescriptionValue(
+      line,
+      "PartitionCount",
+    );
+    const replicationFactor = this.extractKafkaDescriptionValue(
+      line,
+      "ReplicationFactor",
+    );
+
+    if (!name || !partitionCount || !replicationFactor) {
+      return undefined;
+    }
+
+    return {
+      name,
+      partitionCount,
+      replicationFactor,
+    };
+  }
+
+  private extractKafkaDescriptionValue(
+    line: string,
+    key: string,
+  ): string | undefined {
+    const field = line
+      .split("\t")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${key}:`));
+
+    if (!field) {
+      return undefined;
+    }
+
+    const value = field.slice(key.length + 1).trim();
+
+    return value.length > 0 ? value : undefined;
+  }
+
+  private formatTopicDescriptions(topics: TopicDescription[]): string {
+    const rows = [
+      ["TOPIC", "PARTITION COUNT", "REPLICATION FACTOR"],
+      ...topics.map((topic) => [
+        topic.name,
+        topic.partitionCount,
+        topic.replicationFactor,
+      ]),
+    ];
+    const columnWidths = rows[0].map((_, columnIndex) =>
+      Math.max(...rows.map((row) => row[columnIndex].length)),
+    );
+
+    return `${rows
+      .map((row) =>
+        row
+          .map((cell, columnIndex) => cell.padEnd(columnWidths[columnIndex]))
+          .join("  ")
+          .trimEnd(),
+      )
+      .join("\n")}\n`;
   }
 
   private hasValue(value: string | undefined): value is string {

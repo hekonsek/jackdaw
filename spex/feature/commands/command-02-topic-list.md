@@ -6,6 +6,13 @@ This command lists topics in the cluster.
 
 Under the hood `kafka-topics.sh` script is executed.
 
+## Data presented
+
+Topic list displays list of topics with the following data:
+- topic name
+- Partition count
+- Replication factor
+
 ## Connectivity logic
 
 If bootstrap URL is not provided via `--bootstrap-url`, this command uses `cluster discovery` logic to attempt to find it.
